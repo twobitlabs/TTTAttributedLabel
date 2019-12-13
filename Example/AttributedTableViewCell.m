@@ -24,9 +24,6 @@
 #import "AttributedTableViewCell.h"
 #import "TTTAttributedLabel.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
 static CGFloat const kEspressoDescriptionTextFontSize = 17;
 
 static inline NSRegularExpression * NameRegularExpression() {
@@ -65,7 +62,7 @@ static inline NSRegularExpression * ParenthesisRegularExpression() {
     self.summaryLabel = [[TTTAttributedLabel alloc] initWithFrame:CGRectZero];
     self.summaryLabel.font = [UIFont systemFontOfSize:kEspressoDescriptionTextFontSize];
     self.summaryLabel.textColor = [UIColor darkGrayColor];
-    self.summaryLabel.lineBreakMode = UILineBreakModeWordWrap;
+    self.summaryLabel.lineBreakMode = NSLineBreakByWordWrapping;
     self.summaryLabel.numberOfLines = 0;
     self.summaryLabel.linkAttributes = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES] forKey:(__bridge NSString *)kCTUnderlineStyleAttributeName];
     
@@ -79,7 +76,7 @@ static inline NSRegularExpression * ParenthesisRegularExpression() {
     self.summaryLabel.activeLinkAttributes = mutableActiveLinkAttributes;
     
     self.summaryLabel.highlightedTextColor = [UIColor whiteColor];
-    self.summaryLabel.shadowColor = [UIColor colorWithWhite:0.87 alpha:1.0];
+    self.summaryLabel.shadowColor = [UIColor colorWithWhite:0.87f alpha:1.0f];
     self.summaryLabel.shadowOffset = CGSizeMake(0.0f, 1.0f);
     self.summaryLabel.highlightedShadowColor = [UIColor colorWithWhite:0.0f alpha:0.25f];
     self.summaryLabel.highlightedShadowOffset = CGSizeMake(0.0f, -1.0f);
@@ -88,6 +85,8 @@ static inline NSRegularExpression * ParenthesisRegularExpression() {
 
     [self.contentView addSubview:self.summaryLabel];
     
+    self.isAccessibilityElement = NO;
+    
     return self;
 }
 
@@ -95,8 +94,7 @@ static inline NSRegularExpression * ParenthesisRegularExpression() {
     _summaryText = [text copy];
 }
 
-- (void)drawRect:(CGRect)rect
-{
+- (void)drawRect:(CGRect)rect {
     [super drawRect:rect];
     
     [self.summaryLabel setText:self.summaryText afterInheritingLabelAttributesAndConfiguringWithBlock:^NSMutableAttributedString *(NSMutableAttributedString *mutableAttributedString) {
@@ -139,12 +137,15 @@ static inline NSRegularExpression * ParenthesisRegularExpression() {
     [self.summaryLabel setNeedsDisplay];
 }
 
-+ (CGFloat)heightForCellWithText:(NSString *)text {
++ (CGFloat)heightForCellWithText:(NSString *)text availableWidth:(CGFloat)availableWidth {
     static CGFloat padding = 10.0;
 
     UIFont *systemFont = [UIFont systemFontOfSize:kEspressoDescriptionTextFontSize];
-    CGSize textSize = CGSizeMake(275.0, CGFLOAT_MAX);
-    CGSize sizeWithFont = [text sizeWithFont:systemFont constrainedToSize:textSize lineBreakMode:NSLineBreakByWordWrapping];
+    CGSize textSize = CGSizeMake(availableWidth - (2 * padding) - 26, CGFLOAT_MAX); // rough accessory size
+    NSDictionary *attributes = @{
+                                 NSFontAttributeName : systemFont,
+                                 };
+    CGSize sizeWithFont = [text boundingRectWithSize:textSize options:NSStringDrawingUsesLineFragmentOrigin attributes:attributes context:nil].size;
 
 #if defined(__LP64__) && __LP64__
     return ceil(sizeWithFont.height) + padding;
@@ -165,6 +166,18 @@ static inline NSRegularExpression * ParenthesisRegularExpression() {
     [self setNeedsDisplay];
 }
 
-@end
+#pragma mark - UIAccessibilityContainer
 
-#pragma clang diagnostic pop
+- (NSInteger)accessibilityElementCount {
+    return 1;
+}
+
+- (id)accessibilityElementAtIndex:(__unused NSInteger)index {
+    return self.summaryLabel;
+}
+
+- (NSInteger)indexOfAccessibilityElement:(__unused id)element {
+    return 0;
+}
+
+@end
