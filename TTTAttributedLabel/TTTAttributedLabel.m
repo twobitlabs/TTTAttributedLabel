@@ -1377,17 +1377,10 @@ afterInheritingLabelAttributesAndConfiguringWithBlock:(NSMutableAttributedString
           withEvent:(UIEvent *)event
 {
     if (![self linkAtPoint:point] || !self.userInteractionEnabled || self.hidden || self.alpha < 0.01) {
-        return [super hitTest:point withEvent:event];
+        return nil;
     }
 
     return self;
-}
-
-- (UIView *)hitTest:(CGPoint)point withEvent:(__unused UIEvent *)event {
-    if ([self linkAtPoint:point] != nil) {
-        return self;
-    }
-    return nil;
 }
 
 #pragma mark - UIResponder
